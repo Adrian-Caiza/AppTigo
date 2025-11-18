@@ -9,25 +9,19 @@ export default function WelcomeScreen() {
             <Text style={styles.subtitle}>Descubre nuestros planes móviles</Text>
 
             <View style={styles.buttonContainer}>
-                {/* Botón para explorar como invitado */}
-                <Link href="/(guest)/catalog" asChild>
-                    <Pressable style={[styles.button, styles.primaryButton]}>
-                        <Text style={styles.primaryButtonText}>Explorar como Invitado</Text>
-                    </Pressable>
+                {/* ---- CORRECCIÓN 1: Estilos aplicados directo al Link ---- */}
+                <Link href="/(guest)/catalog" style={[styles.button, styles.primaryButton]}>
+                    <Text style={styles.primaryButtonText}>Explorar como Invitado</Text>
                 </Link>
 
-                {/* "Botón" para Iniciar Sesión (estilo de enlace) */}
-                <Link href="/(guest)/login" asChild>
-                    <Pressable style={styles.linkButton}>
-                        <Text style={styles.linkButtonText}>Iniciar Sesión</Text>
-                    </Pressable>
+                {/* ---- CORRECCIÓN 2: 'Pressable' eliminado por consistencia ---- */}
+                <Link href="/(guest)/login" style={styles.linkButton}>
+                    <Text style={styles.linkButtonText}>Iniciar Sesión</Text>
                 </Link>
 
-                {/* Botón para Registrarse */}
-                <Link href="/(guest)/register" asChild>
-                    <Pressable style={[styles.button, styles.secondaryButton]}>
-                        <Text style={styles.secondaryButtonText}>Registrarse</Text>
-                    </Pressable>
+                {/* ---- CORRECCIÓN 3: Estilos aplicados directo al Link ---- */}
+                <Link href="/(guest)/register" style={[styles.button, styles.secondaryButton]}>
+                    <Text style={styles.secondaryButtonText}>Registrarse</Text>
                 </Link>
             </View>
         </View>
@@ -41,7 +35,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
-        backgroundColor: 'white', // Asumiendo fondo blanco
+        backgroundColor: 'white',
     },
     title: {
         fontSize: 32,
@@ -68,9 +62,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#007AFF', // Azul primario
     },
     primaryButtonText: {
-        color: 'white',
+        color: 'white', // Texto blanco
         fontWeight: 'bold',
         fontSize: 16,
+        textAlign: 'center',
     },
     secondaryButton: {
         backgroundColor: '#EFEFEF', // Gris claro
@@ -79,9 +74,10 @@ const styles = StyleSheet.create({
         color: '#333',
         fontWeight: 'bold',
         fontSize: 16,
+        textAlign: 'center',
     },
     linkButton: {
-        padding: 16, // Mismo padding para alinear
+        padding: 16,
         alignItems: 'center',
         marginBottom: 16,
     },
@@ -89,5 +85,6 @@ const styles = StyleSheet.create({
         color: '#007AFF', // Azul
         fontSize: 16,
         fontWeight: '500',
+        textAlign: 'center',
     },
 });

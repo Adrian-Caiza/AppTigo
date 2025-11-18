@@ -87,25 +87,25 @@ export const deletePlan = async (id: string) => {
 // --- FUNCIONES DE STORAGE ---
 
 // 6. SUBIR imagen del plan 
-export const uploadPlanImage = async (uri: string): Promise<string> => {
+export const uploadPlanImage = async (base64String: string, fileExt: string): Promise<string> => {
     try {
-        // 1. Pedir permisos (si no se han dado)
+        // 1. Pedir permisos (sigue siendo una buena práctica)
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
             throw new Error('Permiso de galería denegado');
         }
 
-        // 2. Convertir la imagen a un formato que Supabase entienda
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        const fileExt = uri.split('.').pop(); // 'jpg' o 'png'
-        const filePath = `${Date.now()}.${fileExt}`; // Nombre único
+        const filePath = `${Date.now()}.${fileExt}`;
+        const contentType = `image/${fileExt === 'png' ? 'png' : 'jpeg'}`;
 
-        // 3. Subir al bucket 'planes-imagenes'
+        // 2. Decodificar el string base64 a un ArrayBuffer
+        const arrayBuffer = decode(base64String);
+
+        // 3. Subir el ArrayBuffer al bucket 'planes-imagenes'
         const { data, error: uploadError } = await supabase.storage
-            .from('planes-imagenes') // ID del Bucket [cite: 43]
-            .upload(filePath, blob, {
-                contentType: blob.type,
+            .from('planes-imagenes')
+            .upload(filePath, arrayBuffer, {
+                contentType: contentType,
                 upsert: false,
             });
 
@@ -113,7 +113,7 @@ export const uploadPlanImage = async (uri: string): Promise<string> => {
             throw uploadError;
         }
 
-        // 4. Obtener la URL pública para guardarla en la tabla 'plans_moviles'
+        // 4. Obtener la URL pública
         const { data: publicUrlData } = supabase.storage
             .from('planes-imagenes')
             .getPublicUrl(data.path);
@@ -122,7 +122,10 @@ export const uploadPlanImage = async (uri: string): Promise<string> => {
 
     } catch (error: any) {
         console.error('Error uploading image:', error);
-        throw new Error(error.message);
+        if (error.message) {
+            throw new Error(error.message); // Propaga el error original
+        }
+        throw error;
     }
 };
 

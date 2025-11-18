@@ -64,7 +64,6 @@ export interface ContratacionCompleta {
     // Perfil del usuario
     profiles: {
         full_name: string;
-        email: string | null;
     } | null;
     // Plan contratado
     plans_moviles: {
@@ -81,7 +80,7 @@ export const getAllContrataciones = async (): Promise<ContratacionCompleta[]> =>
         id,
         status,
         contracted_at,
-        profiles ( full_name, email ),
+        profiles ( full_name),
         plans_moviles ( name )
     `)
         .order('contracted_at', { ascending: false });

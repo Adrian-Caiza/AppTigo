@@ -115,7 +115,7 @@ export default function LoginScreen() {
                     onPress={handleLogin}
                     disabled={loading}
                 >
-                    <Text style={styles.buttonText}>Ingresar como Asesor</Text> [cite: 109]
+                    <Text style={styles.buttonText}>Ingresar como Asesor</Text> 
                 </Pressable>
 
                 <Pressable onPress={handlePasswordReset} disabled={loading}>

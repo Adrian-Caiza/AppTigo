@@ -2,18 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getPlanById } from '../../../src/data/repositories/PlanRepository';
-import { createContratacion } from '../../../src/data/repositories/ContratacionRepository';
 import { Plan } from '../../../src/domain/entities/Plan';
-import { useAuth } from '../../../src/presentation/context/AuthContext'; // Importamos el hook de Auth
 
-export default function PlanDetailScreen() {
+export default function GuestPlanDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const { user } = useAuth(); // Obtenemos el usuario de nuestro contexto
-
     const [plan, setPlan] = useState<Plan | null>(null);
     const [loading, setLoading] = useState(true);
-    const [hireLoading, setHireLoading] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -24,31 +19,20 @@ export default function PlanDetailScreen() {
         }
     }, [id]);
 
-    const handleHirePlan = async () => {
-        if (!user || !plan) return;
-
-        setHireLoading(true);
-        try {
-            await createContratacion(plan.id, user.id);
-            Alert.alert(
-                '¡Solicitud Enviada!',
-                'Tu solicitud de contratación ha sido enviada. Un asesor la revisará pronto.',
-                [
-                    // Navegamos a la pestaña "Mis Planes"
-                    { text: 'OK', onPress: () => router.push('/(user)/plans') }
-                ]
-            );
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'No se pudo procesar la solicitud.');
-        } finally {
-            setHireLoading(false);
-        }
+    const handleGoToLogin = () => {
+        Alert.alert(
+            'Función Requerida',
+            'Debes iniciar sesión o registrarte para contratar este plan.',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Iniciar Sesión', onPress: () => router.push('/(guest)/login') }
+            ]
+        );
     };
 
     if (loading) {
         return <ActivityIndicator style={styles.centered} size="large" />;
     }
-
     if (!plan) {
         return <Text style={styles.centered}>Plan no encontrado.</Text>;
     }
@@ -60,28 +44,19 @@ export default function PlanDetailScreen() {
             <Text style={styles.planPrice}>${plan.price}/mes</Text>
             <Text style={styles.planPromo}>{plan.promotion_details}</Text>
 
-            {/* Aquí iría el resto de detalles (minutos, gigas, etc.) */}
             <Text style={styles.details}>Datos: {plan.data_gb ? `${plan.data_gb} GB` : 'Ilimitado'}</Text>
             <Text style={styles.details}>Minutos: {plan.minutes ? `${plan.minutes} min` : 'Ilimitado'}</Text>
             <Text style={styles.details}>WhatsApp: {plan.whatsapp_details}</Text>
             <Text style={styles.details}>Redes Sociales: {plan.social_media_details}</Text>
 
-            <Pressable
-                style={[styles.button, hireLoading && styles.buttonDisabled]}
-                onPress={handleHirePlan}
-                disabled={hireLoading}
-            >
-                <Text style={styles.buttonText}>
-                    {hireLoading ? 'Procesando...' : 'Contratar Plan'}
-                </Text>
+            <Pressable style={styles.button} onPress={handleGoToLogin}>
+                <Text style={styles.buttonText}>Contratar Plan</Text>
             </Pressable>
         </ScrollView>
     );
 }
 
-// (Reutiliza y adapta los estilos, añade 'ScrollView')
- // Asegúrate de instalarlo
-
+// (Reutiliza los estilos de 'app/(user)/plan/[id].tsx')
 const styles = StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     container: { flex: 1, padding: 16, backgroundColor: 'white' },
@@ -91,6 +66,5 @@ const styles = StyleSheet.create({
     planPromo: { fontSize: 16, color: 'green', fontStyle: 'italic', marginBottom: 16 },
     details: { fontSize: 16, marginBottom: 8 },
     button: { marginTop: 24, backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center' },
-    buttonDisabled: { backgroundColor: '#A9A9A9' },
     buttonText: { color: 'white', fontWeight: 'bold', fontSize: 18 },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Alert, Image, Pressable } from 'react-native';
+import { Text, TextInput, Button, StyleSheet, ScrollView, Alert, Image, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Plan } from '../../src/domain/entities/Plan';
 import { getPlanById, createPlan, updatePlan, uploadPlanImage } from '../../src/data/repositories/PlanRepository';
@@ -18,7 +18,7 @@ export default function PlanFormScreen() {
         promotion_details: '',
         image_url: null,
     });
-    const [newImage, setNewImage] = useState<string | null>(null); // URI de la nueva imagen
+    const [newImage, setNewImage] = useState<{ uri: string; base64: string; ext: string } | null>(null);
     const [loading, setLoading] = useState(false);
 
     // Si es modo "Editar", carga los datos del plan
@@ -41,11 +41,28 @@ export default function PlanFormScreen() {
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
-            quality: 1,
+            quality: 0.8,
+            base64: true, // Correcto
         });
 
-        if (!result.canceled) {
-            setNewImage(result.assets[0].uri);
+        // 1. Primero, verificamos que no se cancele y que existan 'assets'
+        if (!result.canceled && result.assets) {
+            const asset = result.assets[0];
+
+            // 2. AHORA verificamos la propiedad 'base64'
+            if (asset.base64) {
+                // En este bloque, TypeScript sabe que asset.base64 es un 'string'
+                const fileExt = asset.uri.split('.').pop() || 'jpg';
+
+                setNewImage({
+                    uri: asset.uri,
+                    base64: asset.base64, // <-- ¡El error ya no debería aparecer aquí!
+                    ext: fileExt
+                });
+            } else {
+                // Es bueno manejar el caso en que base64 falle
+                Alert.alert('Error', 'No se pudo procesar la imagen seleccionada.');
+            }
         }
     };
 
@@ -55,7 +72,7 @@ export default function PlanFormScreen() {
 
         try {
             if (newImage) {
-                uploadedImageUrl = await uploadPlanImage(newImage);
+                uploadedImageUrl = await uploadPlanImage(newImage.base64, newImage.ext);
             }
 
             const planData = {
@@ -86,7 +103,7 @@ export default function PlanFormScreen() {
     };
 
     // Guardamos la URI en una variable. TypeScript podrá inferir el tipo correctamente.
-    const imageUri = newImage || form.image_url; // <-- CORRECCIÓN 1
+    const imageUri = newImage?.uri || form.image_url; // <-- CORRECCIÓN 1
 
     return (
         <ScrollView style={styles.formContainer}>

@@ -8,6 +8,7 @@ export default function GuestLayout() {
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
             <Stack.Screen name="catalog" />
+            <Stack.Screen name="plan/[id]" options={{  headerShown: true, title: 'Detalles del Plan'}} />
         </Stack>
     );
 }
