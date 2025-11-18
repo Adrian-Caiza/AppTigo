@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, LinkProps } from 'expo-router';
 import { Plan } from '../../domain/entities/Plan';
 
 interface PlanCardProps {
     plan: Plan;
     /** La ruta de destino (ej: "/(guest)/plan/123" o "/(user)/plan/123") */
-    href: string;
+    href: LinkProps['href'];
     /** El texto del botón (ej: "Ver Detalles") */
     buttonText: string;
 }

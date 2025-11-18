@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Text, TextInput, Button, StyleSheet, ScrollView, Alert, Image, Pressable } from 'react-native';
+import { 
+    Text, 
+    TextInput, 
+    StyleSheet, 
+    ScrollView, 
+    Alert, 
+    Image, 
+    Pressable, 
+    KeyboardAvoidingView, 
+    Platform, 
+    ActivityIndicator,
+    View 
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Plan } from '../../src/domain/entities/Plan';
 import { getPlanById, createPlan, updatePlan, uploadPlanImage } from '../../src/data/repositories/PlanRepository';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PlanFormScreen() {
     const router = useRouter();
-    const { id } = useLocalSearchParams<{ id?: string }>(); 
+    const { id } = useLocalSearchParams<{ id?: string }>();
     const isEditing = !!id;
 
     const [form, setForm] = useState<Partial<Plan>>({
@@ -38,11 +53,11 @@ export default function PlanFormScreen() {
 
     const handlePickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ImagePicker.MediaTypeOptions.Images, 
             allowsEditing: true,
             aspect: [4, 3],
             quality: 0.8,
-            base64: true, 
+            base64: true,
         });
 
         // 1. Primero, verificamos que no se cancele y que existan 'assets'
@@ -56,7 +71,7 @@ export default function PlanFormScreen() {
 
                 setNewImage({
                     uri: asset.uri,
-                    base64: asset.base64, // <-- ¡El error ya no debería aparecer aquí!
+                    base64: asset.base64,
                     ext: fileExt
                 });
             } else {
@@ -103,78 +118,296 @@ export default function PlanFormScreen() {
     };
 
     // Guardamos la URI en una variable. TypeScript podrá inferir el tipo correctamente.
-    const imageUri = newImage?.uri || form.image_url; // <-- CORRECCIÓN 1
+    const imageUri = newImage?.uri || form.image_url;
+
+    if (loading && isEditing) {
+        return (
+            <LinearGradient colors={['#2E0249', '#570A57']} style={styles.centered}>
+                <ActivityIndicator size="large" color="#FFD700" />
+            </LinearGradient>
+        );
+    }
 
     return (
-        <ScrollView style={styles.formContainer}>
-            <Text style={styles.label}>Nombre del Plan</Text>
-            <TextInput
-                style={styles.input}
-                value={form.name ?? ''} // <-- CORRECCIÓN 2: (?? '') maneja null/undefined
-                onChangeText={v => handleInputChange('name', v)}
-                placeholder="Ej: Plan Smart 10GB"
-            />
+        <LinearGradient
+            colors={['#2E0249', '#570A57', '#A91079']}
+            style={styles.background}
+        >
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardAvoidingContainer}
+                >
+                    <ScrollView contentContainerStyle={styles.formContainer} showsVerticalScrollIndicator={false}>
+                        
+                        <View style={styles.header}>
+                            <Text style={styles.title}>{isEditing ? 'Editar Plan' : 'Nuevo Plan'}</Text>
+                            <Text style={styles.subtitle}>Completa la información del catálogo</Text>
+                        </View>
 
-            <Text style={styles.label}>Precio Mensual ($)</Text>
-            <TextInput
-                style={styles.input}
-                value={String(form.price ?? 0)} // <-- CORRECCIÓN 3: Convertimos a String
-                onChangeText={v => handleInputChange('price', v)}
-                keyboardType="numeric"
-            />
+                        {/* --- Nombre --- */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Nombre del Plan</Text>
+                            <View style={styles.inputWrapper}>
+                                <FontAwesome5 name="tag" size={16} color="#FFD700" style={styles.icon} />
+                                <TextInput
+                                    style={styles.input}
+                                    value={form.name ?? ''}
+                                    onChangeText={v => handleInputChange('name', v)}
+                                    placeholder="Ej: Plan Smart 10GB"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                />
+                            </View>
+                        </View>
 
-            <Text style={styles.label}>Gigas de Datos (Dejar en 0 para Ilimitado)</Text>
-            <TextInput
-                style={styles.input}
-                value={String(form.data_gb ?? 0)} // <-- CORRECCIÓN 4: Convertimos a String
-                onChangeText={v => handleInputChange('data_gb', v)}
-                keyboardType="numeric"
-            />
+                        {/* --- Precio --- */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Precio Mensual ($)</Text>
+                            <View style={styles.inputWrapper}>
+                                <FontAwesome5 name="dollar-sign" size={16} color="#FFD700" style={styles.icon} />
+                                <TextInput
+                                    style={styles.input}
+                                    value={String(form.price ?? 0)}
+                                    onChangeText={v => handleInputChange('price', v)}
+                                    keyboardType="numeric"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                />
+                            </View>
+                        </View>
 
-            <Text style={styles.label}>Minutos (Dejar en 0 para Ilimitado)</Text>
-            <TextInput
-                style={styles.input}
-                value={String(form.minutes ?? 0)} // <-- CORRECCIÓN 5: Convertimos a String
-                onChangeText={v => handleInputChange('minutes', v)}
-                keyboardType="numeric"
-            />
+                        {/* --- Datos y Minutos (Fila doble) --- */}
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                                <Text style={styles.label}>Gigas (0=Inf)</Text>
+                                <View style={styles.inputWrapper}>
+                                    <FontAwesome5 name="database" size={14} color="#FFD700" style={styles.icon} />
+                                    <TextInput
+                                        style={styles.input}
+                                        value={String(form.data_gb ?? 0)}
+                                        onChangeText={v => handleInputChange('data_gb', v)}
+                                        keyboardType="numeric"
+                                        placeholderTextColor="rgba(255,255,255,0.4)"
+                                    />
+                                </View>
+                            </View>
 
-            <Text style={styles.label}>Promoción (Opcional)</Text>
-            <TextInput
-                style={styles.input}
-                value={form.promotion_details ?? ''} // <-- CORRECCIÓN 6: (?? '') maneja null/undefined
-                onChangeText={v => handleInputChange('promotion_details', v)}
-                placeholder="Ej: ¡Primer mes gratis!"
-            />
+                            <View style={[styles.inputGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>Minutos (0=Inf)</Text>
+                                <View style={styles.inputWrapper}>
+                                    <FontAwesome5 name="clock" size={14} color="#FFD700" style={styles.icon} />
+                                    <TextInput
+                                        style={styles.input}
+                                        value={String(form.minutes ?? 0)}
+                                        onChangeText={v => handleInputChange('minutes', v)}
+                                        keyboardType="numeric"
+                                        placeholderTextColor="rgba(255,255,255,0.4)"
+                                    />
+                                </View>
+                            </View>
+                        </View>
 
-            {/* Selector de Imagen */}
-            <Text style={styles.label}>Imagen del Plan</Text>
-            <Pressable style={styles.imagePicker} onPress={handlePickImage}>
-                <Text>Seleccionar Imagen</Text>
-            </Pressable>
+                        {/* --- Promoción --- */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Promoción (Opcional)</Text>
+                            <View style={styles.inputWrapper}>
+                                <FontAwesome5 name="bullhorn" size={16} color="#FFD700" style={styles.icon} />
+                                <TextInput
+                                    style={styles.input}
+                                    value={form.promotion_details ?? ''}
+                                    onChangeText={v => handleInputChange('promotion_details', v)}
+                                    placeholder="Ej: ¡Primer mes gratis!"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                />
+                            </View>
+                        </View>
 
-            {/* Vista previa de la imagen */}
-            {/* Usamos la variable 'imageUri' que definimos arriba */}
-            {imageUri && ( // <-- CORRECCIÓN 7
-                <Image
-                    source={{ uri: imageUri }} // <-- CORRECCIÓN 8
-                    style={styles.imagePreview}
-                />
-            )}
+                        {/* --- Selector de Imagen --- */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Imagen del Plan</Text>
+                            
+                            {imageUri ? (
+                                <View style={styles.imagePreviewContainer}>
+                                    <Image source={{ uri: imageUri }} style={styles.imagePreview} resizeMode="cover" />
+                                    <Pressable style={styles.changeImageButton} onPress={handlePickImage}>
+                                        <FontAwesome5 name="camera" size={14} color="#FFF" />
+                                        <Text style={styles.changeImageText}>Cambiar</Text>
+                                    </Pressable>
+                                </View>
+                            ) : (
+                                <Pressable style={styles.uploadButton} onPress={handlePickImage}>
+                                    <FontAwesome5 name="image" size={24} color="rgba(255,255,255,0.5)" />
+                                    <Text style={styles.uploadText}>Toque para subir imagen</Text>
+                                </Pressable>
+                            )}
+                        </View>
 
-            <Button
-                title={loading ? 'Guardando...' : (isEditing ? 'Actualizar Plan' : 'Crear Plan')}
-                onPress={handleSubmit}
-                disabled={loading}
-            />
-        </ScrollView>
+                        {/* --- Botones --- */}
+                        <View style={styles.footer}>
+                            <Pressable 
+                                style={({pressed}) => [styles.submitButton, pressed && styles.buttonPressed]}
+                                onPress={handleSubmit}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#2E0249" />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>
+                                        {isEditing ? 'Actualizar Plan' : 'Crear Plan'}
+                                    </Text>
+                                )}
+                            </Pressable>
+
+                            <Pressable onPress={() => router.back()} style={styles.cancelButton}>
+                                <Text style={styles.cancelText}>Cancelar</Text>
+                            </Pressable>
+                        </View>
+
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
-    formContainer: { flex: 1, padding: 16 },
-    label: { fontSize: 16, fontWeight: 'bold', marginTop: 10, marginBottom: 5 },
-    input: { borderWidth: 1, borderColor: '#CCC', padding: 10, borderRadius: 5, backgroundColor: 'white' },
-    imagePicker: { padding: 15, backgroundColor: '#EEE', borderRadius: 5, alignItems: 'center', marginBottom: 10 },
-    imagePreview: { width: '100%', height: 200, borderRadius: 5, marginBottom: 16, backgroundColor: '#F0F0F0' },
+    background: { flex: 1 },
+    safeArea: { flex: 1 },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    keyboardAvoidingContainer: { flex: 1 },
+    
+    formContainer: { 
+        paddingHorizontal: 20, 
+        paddingBottom: 50 
+    },
+
+    header: {
+        marginTop: 10,
+        marginBottom: 25,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    subtitle: {
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.7)',
+        marginTop: 4,
+    },
+
+    inputGroup: {
+        marginBottom: 16,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    label: {
+        color: '#FFD700', // Dorado para etiquetas
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        marginLeft: 4,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)', // Glass effect
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        height: 50,
+    },
+    icon: {
+        marginRight: 10,
+        width: 20,
+        textAlign: 'center',
+    },
+    input: {
+        flex: 1,
+        color: '#FFF',
+        fontSize: 16,
+        height: '100%',
+    },
+
+    // Image Styles
+    uploadButton: {
+        height: 150,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        borderStyle: 'dashed',
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    uploadText: {
+        color: 'rgba(255,255,255,0.5)',
+        marginTop: 10,
+        fontSize: 14,
+    },
+    imagePreviewContainer: {
+        position: 'relative',
+        borderRadius: 15,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    imagePreview: {
+        width: '100%',
+        height: 200,
+        backgroundColor: '#000',
+    },
+    changeImageButton: {
+        position: 'absolute',
+        bottom: 10,
+        right: 10,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    changeImageText: {
+        color: '#FFF',
+        fontSize: 12,
+        marginLeft: 6,
+        fontWeight: 'bold',
+    },
+
+    // Footer Buttons
+    footer: {
+        marginTop: 20,
+        gap: 15,
+    },
+    submitButton: {
+        backgroundColor: '#FFD700', // Dorado
+        paddingVertical: 16,
+        borderRadius: 30,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 5,
+    },
+    buttonPressed: {
+        opacity: 0.9,
+        transform: [{ scale: 0.98 }]
+    },
+    submitButtonText: {
+        color: '#2E0249', // Texto oscuro
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    cancelButton: {
+        alignItems: 'center',
+        padding: 10,
+    },
+    cancelText: {
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: 16,
+    }
 });

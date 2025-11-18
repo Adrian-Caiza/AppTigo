@@ -18,7 +18,7 @@ function RootLayout() {
 
     // 1. Si no hay sesión (y no estamos en el grupo 'guest')
     if (!session && !inAuthGroup) {
-      router.replace('/(guest)/login');
+      router.replace('/(guest)');
     } 
     // 2. Si hay sesión y es 'usuario_registrado'
     else if (session && profile?.role === 'usuario_registrado' && !inUserGroup) {

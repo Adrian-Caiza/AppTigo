@@ -1,9 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, TextInput, Pressable } from 'react-native';
+import {
+    View,
+    Text,
+    FlatList,
+    ActivityIndicator,
+    StyleSheet,
+    TextInput,
+    Pressable,
+    StatusBar,
+    Platform
+} from 'react-native';
 import { getActivePlans } from '../../src/data/repositories/PlanRepository';
 import { Plan } from '../../src/domain/entities/Plan';
-import PlanCard from '../../src/presentation/components/PlanCard'; // Importamos el componente
+import PlanCard from '../../src/presentation/components/PlanCard';
 import { Link, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 
 export default function GuestCatalogScreen() {
     const router = useRouter();
@@ -11,7 +24,7 @@ export default function GuestCatalogScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // BONUS: Estado para la búsqueda [cite: 114]
+    // Estado para la búsqueda (Lógica intacta)
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -28,94 +41,199 @@ export default function GuestCatalogScreen() {
         fetchPlans();
     }, []);
 
-    // BONUS: Filtrar planes basado en la búsqueda [cite: 114]
+    // Filtrado (Lógica intacta)
     const filteredPlans = plans.filter(plan =>
         plan.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     if (loading) {
-        return <ActivityIndicator style={styles.centered} size="large" />;
+        return (
+            <LinearGradient colors={['#2E0249', '#570A57']} style={styles.centered}>
+                <ActivityIndicator size="large" color="#FFD700" />
+            </LinearGradient>
+        );
     }
+
     if (error) {
-        return <Text style={styles.centered}>Error al cargar planes: {error}</Text>;
+        return (
+            <LinearGradient colors={['#2E0249', '#570A57']} style={styles.centered}>
+                <Text style={styles.errorText}>Error al cargar planes: {error}</Text>
+                <Pressable onPress={() => router.back()} style={styles.backButtonError}>
+                    <Text style={styles.backButtonText}>Volver</Text>
+                </Pressable>
+            </LinearGradient>
+        );
     }
 
     return (
-        <View style={styles.container}>
-            {/* Header con botón de volver y login */}
-            <View style={styles.header}>
-                <Pressable onPress={() => router.back()}>
-                    <Text style={styles.backButton}>← Volver</Text>
-                </Pressable>
-                <Link href="/(guest)/login" asChild>
-                    <Pressable style={styles.loginButton}>
-                        <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-                    </Pressable>
-                </Link>
-            </View>
+        <LinearGradient
+            colors={['#2E0249', '#570A57', '#A91079']}
+            style={styles.background}
+        >
+            <StatusBar barStyle="light-content" />
 
-            <Text style={styles.title}>Planes Disponibles</Text>
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
 
-            {/* Barra de Búsqueda (Bonus) [cite: 114] */}
-            <TextInput
-                style={styles.searchBar}
-                placeholder="Buscar planes..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-            />
+                    {/* --- HEADER --- */}
+                    <View style={styles.header}>
+                        <Pressable onPress={() => router.back()} style={styles.backButton}>
+                            <FontAwesome5 name="arrow-left" size={20} color="#FFF" />
+                        </Pressable>
 
-            <FlatList
-                data={filteredPlans} // Usamos los planes filtrados
-                renderItem={({ item }) => (
-                    <PlanCard
-                        plan={item}
-                        href={`/(guest)/plan/${item.id}`} // Ruta de Invitado
-                        buttonText="Ver Detalles"
+                        <Link href="/(guest)/login" asChild>
+                            <Pressable style={styles.loginButton}>
+                                <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                            </Pressable>
+                        </Link>
+                    </View>
+
+                    <Text style={styles.title}>Planes Disponibles</Text>
+                    <Text style={styles.subtitle}>Encuentra el plan perfecto para ti</Text>
+
+                    {/* --- BARRA DE BÚSQUEDA (Estilo Glass) --- */}
+                    <View style={styles.searchContainer}>
+                        <FontAwesome5 name="search" size={16} color="rgba(255,255,255,0.6)" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Buscar planes (ej. Smart, Premium)..."
+                            placeholderTextColor="rgba(255,255,255,0.5)"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                        {searchQuery.length > 0 && (
+                            <Pressable onPress={() => setSearchQuery('')}>
+                                <FontAwesome5 name="times-circle" size={16} color="rgba(255,255,255,0.6)" />
+                            </Pressable>
+                        )}
+                    </View>
+
+                    {/* --- LISTA DE PLANES --- */}
+                    <FlatList
+                        data={filteredPlans}
+                        renderItem={({ item }) => (
+                            <View style={styles.cardWrapper}>
+                                <PlanCard
+                                    plan={item}
+                                    href={`/(guest)/plan/${item.id}`}
+                                    buttonText="Ver Detalles"
+                                />
+                            </View>
+                        )}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
                     />
-                )}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingBottom: 20 }}
-            />
-        </View>
+
+                </View>
+            </SafeAreaView>
+        </LinearGradient>
     );
 }
 
-// --- Estilos ---
+// --- ESTILOS MEJORADOS ---
 const styles = StyleSheet.create({
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    container: { flex: 1, paddingTop: 50, paddingHorizontal: 16, backgroundColor: '#F5F5F5' },
+    background: {
+        flex: 1,
+    },
+    safeArea: {
+        flex: 1,
+    },
+    container: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20
+    },
+    errorText: {
+        color: '#FFF',
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center'
+    },
+    backButtonError: {
+        padding: 10,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 8
+    },
+
+    // Header Styles
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginTop: 10,
+        marginBottom: 20,
     },
     backButton: {
-        fontSize: 16,
-        color: '#007AFF',
+        padding: 10,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 12,
+    },
+    backButtonText: {
+        color: '#FFF'
     },
     loginButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#FFD700', // Dorado para resaltar la acción
         paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 5,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 2 }
     },
     loginButtonText: {
-        color: 'white',
+        color: '#2E0249',
         fontWeight: 'bold',
+        fontSize: 14,
     },
+
+    // Text Styles
     title: {
-        fontSize: 24,
+        fontSize: 32,
         fontWeight: 'bold',
-        marginBottom: 16
+        color: '#FFF',
+        marginBottom: 5
     },
-    searchBar: {
-        backgroundColor: 'white',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 8,
+    subtitle: {
+        fontSize: 16,
+        color: 'rgba(255,255,255,0.7)',
+        marginBottom: 20
+    },
+
+    // Search Bar Styles
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.15)', // Efecto cristal
+        borderRadius: 15,
+        paddingHorizontal: 15,
+        paddingVertical: Platform.OS === 'ios' ? 12 : 8,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
-        marginBottom: 16,
+        borderColor: 'rgba(255,255,255,0.2)',
+        marginBottom: 20,
     },
+    searchIcon: {
+        marginRight: 10,
+    },
+    searchInput: {
+        flex: 1,
+        color: '#FFF',
+        fontSize: 16,
+    },
+
+    // List Styles
+    listContent: {
+        paddingBottom: 20,
+    },
+    cardWrapper: {
+        marginBottom: 20, // Espacio entre tarjetas
+        // El PlanCard interno tiene fondo blanco, lo que crea un buen contraste con el fondo oscuro
+    }
 });

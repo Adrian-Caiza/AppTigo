@@ -8,10 +8,13 @@ import {
     Alert,
     ActivityIndicator,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    ScrollView
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { signIn, sendPasswordReset } from '../../src/data/repositories/AuthRepository';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -19,11 +22,6 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    /**
-     * Maneja el inicio de sesión.
-     * La lógica es la misma para ambos roles; el AuthContext
-     * se encargará de redirigir según el rol del perfil.
-     */
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Campos incompletos', 'Por favor, ingresa tu email y contraseña.');
@@ -32,8 +30,7 @@ export default function LoginScreen() {
         setLoading(true);
         try {
             await signIn({ email, password });
-            // El AuthContext y el _layout.tsx se encargarán de la
-            // redirección automática al layout (user) o (advisor).
+            // La redirección la maneja el AuthContext automáticamente
         } catch (error: any) {
             Alert.alert('Error de Inicio de Sesión', error.message || 'Email o contraseña incorrectos.');
         } finally {
@@ -41,9 +38,6 @@ export default function LoginScreen() {
         }
     };
 
-    /**
-     * Maneja la solicitud de restablecimiento de contraseña.
-     */
     const handlePasswordReset = async () => {
         if (!email) {
             Alert.alert('Email requerido', 'Ingresa tu email para restablecer la contraseña.');
@@ -52,10 +46,7 @@ export default function LoginScreen() {
         setLoading(true);
         try {
             await sendPasswordReset(email);
-            Alert.alert(
-                'Correo Enviado',
-                'Revisa tu bandeja de entrada para restablecer tu contraseña.'
-            );
+            Alert.alert('Correo Enviado', 'Revisa tu bandeja de entrada para restablecer tu contraseña.');
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {
@@ -64,157 +55,229 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+        <LinearGradient
+            // Gradiente inspirado en la imagen (Tonos morados/oscuros elegantes)
+            colors={['#2E0249', '#570A57', '#A91079']}
+            style={styles.background}
         >
-            <View style={styles.innerContainer}>
-                <Text style={styles.title}>Iniciar Sesión</Text>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="tu@email.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!loading}
-                />
+                    {/* Títulos */}
+                    <View style={styles.header}>
+                        <Text style={styles.title}>Bienvenido</Text>
+                        <Text style={styles.subtitle}>Inicia sesión en Tigo</Text>
+                    </View>
 
-                <Text style={styles.label}>Contraseña</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="••••••••"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    editable={!loading}
-                />
+                    {/* Inputs Estilizados (Estilo Cápsula) */}
+                    <View style={styles.formContainer}>
 
-                {loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
+                        <View style={styles.inputWrapper}>
+                            <FontAwesome5 name="envelope" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email"
+                                placeholderTextColor="rgba(255,255,255,0.5)"
+                                value={email}
+                                onChangeText={setEmail}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                                editable={!loading}
+                            />
+                        </View>
 
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.button,
-                        styles.userButton,
-                        (loading || pressed) && styles.buttonDisabled
-                    ]}
-                    onPress={handleLogin}
-                    disabled={loading}
-                >
-                    <Text style={styles.buttonText}>Ingresar como Usuario</Text>
-                </Pressable>
+                        <View style={styles.inputWrapper}>
+                            <FontAwesome5 name="lock" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Contraseña"
+                                placeholderTextColor="rgba(255,255,255,0.5)"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry
+                                editable={!loading}
+                            />
+                        </View>
 
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.button,
-                        styles.advisorButton,
-                        (loading || pressed) && styles.buttonDisabled
-                    ]}
-                    onPress={handleLogin}
-                    disabled={loading}
-                >
-                    <Text style={styles.buttonText}>Ingresar como Asesor</Text> 
-                </Pressable>
-
-                <Pressable onPress={handlePasswordReset} disabled={loading}>
-                    <Text style={styles.link}>¿Olvidaste tu contraseña?</Text>
-                </Pressable>
-
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-                    <Link href="/(guest)/register" asChild>
-                        <Pressable disabled={loading}>
-                            <Text style={styles.link}>Regístrate</Text>
+                        {/* Enlace Olvidaste Contraseña */}
+                        <Pressable onPress={handlePasswordReset} disabled={loading} style={styles.forgotContainer}>
+                            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
                         </Pressable>
-                    </Link>
-                </View>
 
-                <View style={styles.footer}>
-                    <Link href="/(guest)/" asChild>
-                        <Pressable disabled={loading}>
-                            <Text style={styles.link}>← Volver</Text>
-                        </Pressable>
-                    </Link>
-                </View>
-            </View>
-        </KeyboardAvoidingView>
+                        {loading && <ActivityIndicator size="large" color="#FFD700" style={{ marginVertical: 20 }} />}
+
+                        {/* Botones de Acción (Restaurados y Estilizados) */}
+                        <View style={styles.buttonContainer}>
+
+                            <Pressable
+                                style={({ pressed }) => [styles.button, styles.userButton, pressed && styles.buttonPressed]}
+                                onPress={handleLogin}
+                                disabled={loading}
+                            >
+                                <Text style={styles.userButtonText}>Ingresar como Usuario</Text>
+                                <FontAwesome5 name="arrow-right" size={16} color="#2E0249" />
+                            </Pressable>
+
+                            <Pressable
+                                style={({ pressed }) => [styles.button, styles.advisorButton, pressed && styles.buttonPressed]}
+                                onPress={handleLogin}
+                                disabled={loading}
+                            >
+                                <Text style={styles.advisorButtonText}>Ingresar como Asesor</Text>
+                            </Pressable>
+
+                        </View>
+
+                        {/* Footer / Registro */}
+                        <View style={styles.footer}>
+                            <Text style={styles.footerText}>¿No tienes cuenta?</Text>
+                            <Link href="/(guest)/register" asChild>
+                                <Pressable disabled={loading}>
+                                    <Text style={styles.registerLink}>Regístrate</Text>
+                                </Pressable>
+                            </Link>
+                        </View>
+
+                        {/* Botón Volver */}
+                        <Link href="/(guest)" asChild>
+                            <Pressable style={styles.backLink} disabled={loading}>
+                                <Text style={styles.backLinkText}>← Volver al inicio</Text>
+                            </Pressable>
+                        </Link>
+
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </LinearGradient>
     );
 }
 
-// --- Estilos ---
 const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
     },
-    innerContainer: {
-        flex: 1,
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
         padding: 24,
     },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        textAlign: 'left',
-        marginBottom: 32,
-        color: '#111',
+    header: {
+        marginBottom: 40,
+        alignItems: 'center',
     },
-    label: {
-        fontSize: 16,
-        color: '#333',
-        marginBottom: 8,
-        fontWeight: '500',
+    title: {
+        fontSize: 42,
+        fontWeight: 'bold',
+        color: '#FFF',
+        marginBottom: 5,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 5,
+    },
+    subtitle: {
+        fontSize: 18,
+        color: 'rgba(255,255,255,0.8)',
+    },
+    formContainer: {
+        width: '100%',
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)', // Fondo translúcido estilo "Glass"
+        borderRadius: 30, // Bordes redondeados (Píldora)
+        paddingHorizontal: 20,
+        paddingVertical: 5,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    inputIcon: {
+        marginRight: 15,
     },
     input: {
-        borderWidth: 1,
-        borderColor: '#CCC',
-        backgroundColor: 'white',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        marginBottom: 16,
+        flex: 1,
+        color: '#FFF',
         fontSize: 16,
+        paddingVertical: 12,
+    },
+    forgotContainer: {
+        alignSelf: 'flex-end',
+        marginBottom: 30,
+    },
+    forgotText: {
+        color: '#FFD700', // Dorado para resaltar
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    buttonContainer: {
+        gap: 15,
+        marginBottom: 30,
     },
     button: {
-        padding: 16,
-        borderRadius: 8,
+        borderRadius: 30,
+        paddingVertical: 16,
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        gap: 10,
+        elevation: 3, // Sombra en Android
+        shadowColor: '#000', // Sombra en iOS
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
     },
+    buttonPressed: {
+        opacity: 0.8,
+        transform: [{ scale: 0.98 }],
+    },
+    // Estilo Botón Usuario (Principal - Dorado/Amarillo de la imagen)
     userButton: {
-        backgroundColor: '#007AFF', // Azul
+        backgroundColor: '#FFD700',
     },
-    advisorButton: {
-        backgroundColor: '#34C759', // Verde [cite: 109]
-    },
-    buttonDisabled: {
-        opacity: 0.7,
-    },
-    buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
+    userButtonText: {
+        color: '#2E0249', // Texto oscuro para contraste con amarillo
         fontSize: 16,
+        fontWeight: 'bold',
     },
-    link: {
-        color: '#007AFF',
-        textAlign: 'center',
-        marginVertical: 10,
-        fontSize: 15,
-        fontWeight: '500',
+    // Estilo Botón Asesor (Secundario - Transparente con borde o color suave)
+    advisorButton: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.5)',
+    },
+    advisorButtonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '600',
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 16,
+        alignItems: 'center',
+        marginBottom: 20,
     },
     footerText: {
+        color: 'rgba(255,255,255,0.7)',
         fontSize: 15,
-        color: '#555',
     },
-    loader: {
-        marginVertical: 10,
+    registerLink: {
+        color: '#FFD700',
+        fontSize: 15,
+        fontWeight: 'bold',
+        marginLeft: 5,
+    },
+    backLink: {
         alignSelf: 'center',
     },
+    backLinkText: {
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: 14,
+    }
 });

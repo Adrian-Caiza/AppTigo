@@ -1,14 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    Pressable,
+    FlatList,
+    StyleSheet,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    StatusBar
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../../src/presentation/context/AuthContext';
 import { getMessages, sendMessage, subscribeToChat, unsubscribeFromChat, ChatMessage } from '../../../src/data/repositories/ChatRepository';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../../src/lib/supabase';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 export default function ChatScreen() {
     const { id: contratacionId } = useLocalSearchParams<{ id: string }>();
-    const { user, profile } = useAuth(); // Nuestro usuario actual
+    const { user, profile } = useAuth();
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -16,6 +30,7 @@ export default function ChatScreen() {
     const channelRef = useRef<RealtimeChannel | null>(null);
     const flatListRef = useRef<FlatList>(null);
 
+    // ... (Tus useEffects de carga y suscripción se mantienen igual) ...
     // Cargar mensajes iniciales
     useEffect(() => {
         const fetchMessages = async () => {
@@ -33,9 +48,7 @@ export default function ChatScreen() {
 
     // Suscribirse a Realtime
     useEffect(() => {
-        // Definir el handler para nuevos mensajes
         const handleNewMessage = (payload: any) => {
-            // Necesitamos cargar el perfil del remitente
             const fetchMessageWithProfile = async (messageId: number) => {
                 const { data } = await supabase.from('mensajes_chat')
                     .select('*, profiles(full_name)')
@@ -45,14 +58,12 @@ export default function ChatScreen() {
                     setMessages(currentMessages => [...currentMessages, data as ChatMessage]);
                 }
             };
-
             fetchMessageWithProfile(payload.new.id);
         };
 
         const channel = subscribeToChat(contratacionId, handleNewMessage);
         channelRef.current = channel;
 
-        // Limpieza al desmontar el componente
         return () => {
             if (channelRef.current) {
                 unsubscribeFromChat(channelRef.current);
@@ -60,10 +71,12 @@ export default function ChatScreen() {
         };
     }, [contratacionId]);
 
-    // Scroll al final cuando llegan mensajes
+    // Scroll al final
     useEffect(() => {
         if (flatListRef.current) {
-            flatListRef.current.scrollToEnd({ animated: true });
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         }
     }, [messages]);
 
@@ -72,159 +85,117 @@ export default function ChatScreen() {
 
         try {
             const messageText = newMessage;
-            setNewMessage(''); // Limpiar el input inmediatamente
+            setNewMessage('');
             await sendMessage(contratacionId, user.id, messageText);
         } catch (error: any) {
             console.error('Error al enviar:', error.message);
-            // Opcional: Poner el mensaje de vuelta en el input si falla
             setNewMessage(newMessage);
         }
     };
 
     if (loading) {
-        return <ActivityIndicator style={styles.centered} size="large" />;
+        return (
+            <LinearGradient colors={['#2E0249', '#570A57']} style={styles.centered}>
+                <ActivityIndicator size="large" color="#FFD700" />
+            </LinearGradient>
+        );
     }
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-            keyboardVerticalOffset={90} // Ajusta este valor según tu header
+        <LinearGradient
+            colors={['#2E0249', '#570A57', '#A91079']}
+            style={styles.background}
         >
-            <FlatList
-                ref={flatListRef}
-                data={messages}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <MessageBubble
-                        message={item}
-                        isCurrentUser={item.sender_id === user?.id}
-                        currentUserRole={profile?.role}
-                    />
-                )}
-                style={styles.chatArea}
-            />
+            <StatusBar barStyle="light-content" />
 
-            {/* Input de Mensaje */}
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    value={newMessage}
-                    onChangeText={setNewMessage}
-                    placeholder="Escribe un mensaje..."
-                />
-                <Pressable style={styles.sendButton} onPress={handleSend}>
-                    <Text style={styles.sendButtonText}>Enviar</Text>
-                </Pressable>
-            </View>
-        </KeyboardAvoidingView>
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+                <KeyboardAvoidingView
+                    // Usamos 'padding' en iOS y 'height' en Android para mejor compatibilidad
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                    // Ajustamos el offset. 100 suele cubrir el Header + StatusBar
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 100}
+                >
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item }) => (
+                            <MessageBubble
+                                message={item}
+                                isCurrentUser={item.sender_id === user?.id}
+                                currentUserRole={profile?.role}
+                            />
+                        )}
+                        contentContainerStyle={styles.chatContent}
+                        showsVerticalScrollIndicator={false}
+                        // Esto ayuda a mantener la posición del scroll cuando aparece el teclado
+                        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+                    />
+
+                    {/* Área de Input */}
+                    <View style={styles.inputWrapper}>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                value={newMessage}
+                                onChangeText={setNewMessage}
+                                placeholder="Escribe un mensaje..."
+                                placeholderTextColor="rgba(255,255,255,0.5)"
+                                multiline
+                            />
+                            <Pressable
+                                style={({ pressed }) => [styles.sendButton, pressed && styles.sendButtonPressed]}
+                                onPress={handleSend}
+                            >
+                                <FontAwesome5 name="paper-plane" size={18} color="#2E0249" />
+                            </Pressable>
+                        </View>
+                    </View>
+
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </LinearGradient>
     );
 }
 
-// Componente de Burbuja de Mensaje
+// ... (El componente MessageBubble y los estilos se mantienen igual que en la respuesta anterior)
+// ...
+
+// Solo asegúrate de que MessageBubble y styles estén aquí abajo como antes
 const MessageBubble = ({ message, isCurrentUser, currentUserRole }: { message: ChatMessage; isCurrentUser: boolean; currentUserRole?: 'usuario_registrado' | 'asesor_comercial'; }) => {
-    // 1. Determina cuál debe ser el nombre por defecto.
     const defaultName = currentUserRole === 'usuario_registrado' ? 'Asesor' : 'Cliente';
-    // 2. Intenta usar el nombre real (ej. "Juan Pérez"), si falla, usa el por defecto.
     const displayName = message.profiles?.full_name || defaultName;
+
     return (
-        <View
-            style={[
-                styles.messageContainer,
-                isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage,
-            ]}
-        >
-            {!isCurrentUser && (
-                <Text style={styles.senderName}>
-                    {/* Esto es el nombre del usuario cuando el asesor está viendo el chat */}
-                    {displayName}
-                </Text>
-            )}
-
-            {/* --- INICIO DE LA CORRECCIÓN --- */}
-            <Text style={[
-                styles.messageText,
-                isCurrentUser && styles.currentUserMessageText // Aplica el color blanco si es el usuario actual
-            ]}>
-                {message.message}
-            </Text>
-            {/* --- FIN DE LA CORRECCIÓN --- */}
-
-            <Text style={[
-                styles.messageTime,
-                isCurrentUser && styles.currentUserMessageTime // Pequeña mejora para la hora
-            ]}>
+        <View style={[styles.messageContainer, isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble]}>
+            {!isCurrentUser && <Text style={styles.senderName}>{displayName}</Text>}
+            <Text style={[styles.messageText, isCurrentUser ? styles.currentUserText : styles.otherUserText]}>{message.message}</Text>
+            <Text style={[styles.timeText, isCurrentUser ? styles.currentUserTime : styles.otherUserTime]}>
                 {new Date(message.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}
             </Text>
         </View>
     );
 };
 
-// --- Estilos del Chat ---
 const styles = StyleSheet.create({
+    background: { flex: 1 },
+    safeArea: { flex: 1 },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    container: { flex: 1, backgroundColor: '#F0F0F0' },
-    chatArea: { flex: 1, paddingHorizontal: 10, paddingTop: 10 },
-    inputContainer: {
-        flexDirection: 'row',
-        padding: 10,
-        backgroundColor: 'white',
-        borderTopWidth: 1,
-        borderColor: '#CCC',
-    },
-    input: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#DDD',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        backgroundColor: 'white',
-    },
-    sendButton: {
-        marginLeft: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#007AFF',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-    },
-    sendButtonText: { color: 'white', fontWeight: 'bold' },
-    messageContainer: {
-        maxWidth: '80%',
-        padding: 10,
-        borderRadius: 10,
-        marginBottom: 10,
-    },
-    currentUserMessage: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#007AFF',
-    },
-    otherUserMessage: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#E5E5EA',
-    },
-    senderName: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: '#555',
-        marginBottom: 2,
-    },
-    messageText: {
-        fontSize: 16,
-        color: 'black', // Ajuste para que el texto sea negro en el fondo claro
-    },
-
-    currentUserMessageText: { // Opcional si quieres texto blanco
-        color: 'white',
-    },
-    messageTime: {
-        fontSize: 10,
-        color: '#888',
-        alignSelf: 'flex-end',
-        marginTop: 2,
-    },
-    currentUserMessageTime: { // <-- AÑADIR ESTE ESTILO (Opcional, pero recomendado)
-    color: '#E0E0E0', // Un color más claro para la burbuja azul
-    },
+    chatContent: { paddingHorizontal: 15, paddingTop: 20, paddingBottom: 10 },
+    inputWrapper: { padding: 15,marginBottom: 0, backgroundColor: 'rgba(20, 0, 35, 0.6)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
+    inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 25, paddingHorizontal: 15, paddingVertical: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+    input: { flex: 1, color: '#FFF', fontSize: 16, maxHeight: 100, paddingTop: 8, paddingBottom: 8 },
+    sendButton: { width: 40, height: 40, backgroundColor: '#FFD700', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginLeft: 10, elevation: 3 },
+    sendButtonPressed: { opacity: 0.8, transform: [{ scale: 0.95 }] },
+    messageContainer: { maxWidth: '80%', padding: 12, borderRadius: 20, marginBottom: 12 },
+    currentUserBubble: { alignSelf: 'flex-end', backgroundColor: '#FFD700', borderBottomRightRadius: 2, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 3, elevation: 2 },
+    currentUserText: { color: '#2E0249', fontSize: 16 },
+    currentUserTime: { color: 'rgba(46, 2, 73, 0.6)' },
+    otherUserBubble: { alignSelf: 'flex-start', backgroundColor: 'rgba(255, 255, 255, 0.15)', borderBottomLeftRadius: 2, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+    otherUserText: { color: '#FFF', fontSize: 16 },
+    otherUserTime: { color: 'rgba(255, 255, 255, 0.5)' },
+    senderName: { fontSize: 12, fontWeight: 'bold', color: '#FFD700', marginBottom: 4, marginLeft: 2 },
+    messageText: { lineHeight: 22 },
+    timeText: { fontSize: 10, alignSelf: 'flex-end', marginTop: 4 },
 });
