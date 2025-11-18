@@ -40,9 +40,13 @@ export default function ProfileScreen() {
             </View>
 
             {/* Botones de Acción */}
-            <Pressable style={[styles.button, styles.editButton]}>
+            <Pressable 
+                style={[styles.button, styles.editButton]}
+                onPress={() => router.push('/(advisor)/edit-profile')} 
+            >
                 <Text style={styles.buttonText}>Editar Perfil</Text>
             </Pressable>
+
             <Pressable style={[styles.button, styles.logoutButton]} onPress={handleSignOut}>
                 <Text style={styles.buttonText}>Cerrar Sesión</Text>
             </Pressable>

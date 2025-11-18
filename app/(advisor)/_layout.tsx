@@ -47,6 +47,21 @@ export default function AdvisorLayout() {
                     title: 'Crear/Editar Plan'
                 }}
             />
+            <Tabs.Screen
+                name="chat/[id]" // app/(advisor)/chat/[id].tsx
+                options={{
+                href: null, // Oculta este tab
+                headerShown: true,
+                title: 'Chat con Cliente'
+                }}
+            />
+            <Tabs.Screen
+                name="edit-profile" 
+                options={{
+                href: null, // Oculto de la barra de tabs
+                title: 'Editar Perfil' // Título del header
+                }}
+            />
         </Tabs>
     );
 }

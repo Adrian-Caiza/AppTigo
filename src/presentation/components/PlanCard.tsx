@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Link } from 'expo-router';
 import { Plan } from '../../domain/entities/Plan';
 
@@ -16,6 +16,14 @@ export default function PlanCard({ plan, href, buttonText }: PlanCardProps) {
         <View style={styles.card}>
             {/* Aquí puedes añadir la imagen si lo deseas */}
             {/* <Image source={{ uri: plan.image_url }} style={styles.image} /> */}
+
+            {plan.image_url && (
+                <Image 
+                    source={{ uri: plan.image_url }} 
+                    style={styles.image} 
+                    resizeMode="cover" 
+                />
+            )}
 
             <Text style={styles.planName}>{plan.name}</Text>
             <Text style={styles.planPrice}>${plan.price}/mes</Text>
@@ -53,7 +61,12 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 3,
     },
-    // image: { width: '100%', height: 150, borderRadius: 8, marginBottom: 12 },
+    image: 
+    { width: '100%',
+        height: 150, 
+        borderRadius: 8, 
+        marginBottom: 12 
+    },
     planName: {
         fontSize: 20,
         fontWeight: 'bold'

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../../lib/supabase'; // Ajusta la ruta
+import { supabase } from '../../lib/supabase';
 
 // Definimos el tipo de nuestro contexto
 interface AuthContextData {
@@ -8,6 +8,7 @@ interface AuthContextData {
     user: User | null;
     profile: Profile | null; // Usaremos un tipo 'Profile' para el rol
     loading: boolean;
+    refreshProfile: () => Promise<void>;
 }
 
 // Tipo para nuestro perfil (coincide con la tabla 'profiles')
@@ -26,6 +27,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const refreshProfile = async () => {
+        // Esta lógica es la misma que está en el useEffect
+        if (session?.user) {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+
+            if (data) {
+                setProfile(data as Profile);
+            } else if (error) {
+                console.error('Error refreshing profile:', error.message);
+            }
+        }
+    };
 
     useEffect(() => {
         // Escuchar cambios de autenticación
@@ -60,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ session, user, profile, loading }}>
+        <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

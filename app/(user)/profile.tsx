@@ -11,8 +11,6 @@ export default function ProfileScreen() {
     const handleSignOut = async () => {
         try {
             await signOut();
-            // El AuthContext y el _layout.tsx se encargarán de
-            // redirigir automáticamente al (guest) layout.
         } catch (error: any) {
             Alert.alert('Error', error.message);
         }
@@ -40,7 +38,10 @@ export default function ProfileScreen() {
             </View>
 
             {/* Botones de Acción */}
-            <Pressable style={[styles.button, styles.editButton]}>
+            <Pressable 
+                style={[styles.button, styles.editButton]}
+                onPress={() => router.push('/(user)/edit-profile')} 
+            >
                 <Text style={styles.buttonText}>Editar Perfil</Text>
             </Pressable>
             <Pressable style={[styles.button, styles.logoutButton]} onPress={handleSignOut}>

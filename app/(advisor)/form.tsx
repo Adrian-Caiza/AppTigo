@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 export default function PlanFormScreen() {
     const router = useRouter();
-    const { id } = useLocalSearchParams<{ id?: string }>(); // Obtiene el ID de la URL
+    const { id } = useLocalSearchParams<{ id?: string }>(); 
     const isEditing = !!id;
 
     const [form, setForm] = useState<Partial<Plan>>({
@@ -42,7 +42,7 @@ export default function PlanFormScreen() {
             allowsEditing: true,
             aspect: [4, 3],
             quality: 0.8,
-            base64: true, // Correcto
+            base64: true, 
         });
 
         // 1. Primero, verificamos que no se cancele y que existan 'assets'
